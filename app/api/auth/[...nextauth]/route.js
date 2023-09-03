@@ -1,45 +1,52 @@
 import NextAuth from "next-auth";
-import GooglProvider from "next-auth/providers/google";
-import User from "@models/user";
+import GoogleProvider from "next-auth/providers/google";
+import User from "@models/User";
 import { connectDB } from "@utils/database";
-
 
 const handler = NextAuth({
     providers: [
-        GooglProvider({
+        GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
         })
     ],
-    async session({ session }) {
-        const sessionUser = await User.findOne({ email: session.user.email });
+    callbacks: {
+        async session({ session }) {
+            const sessionUser = await User.findOne({ email: session.user.email });
+            session.user.id = sessionUser._id.toString();
 
-        session.user.id = sessionUser._id.toString();
+            return session;
 
-        return session;
+        },
+        async signIn({ profile }) {
+            try {
+                await connectDB();
 
-    },
-    async signIn({ profile }) {
-        try {
-            await connectDB();
+                // let username = profile.name.replace(/ /g, "").toLowerCase();
 
-            const userExists = await User.findOne({ email: profile.email });
+                // if (!/^[a-z0-9]{8,50}$/.test(username)) {
+                //     throw new Error('Generated username is invalid');
+                // }
 
-            if (!userExists) {
-                await User.create({
-                    email: profile.email,
-                    username: profile.name.replace(" ", "").toLowerCase(),
-                    image: profile.image,
-                })
+                const userExists = await User.findOne({ email: profile.email });
+
+                if (!userExists) {
+                    await User.create({
+                        email: profile.email,
+                        username: profile.name.replace(/ /g, "").toLowerCase(),
+                        image: profile.picture,
+                    })
+                }
+
+                return true;
+
+            } catch (error) {
+                console.log('profile', profile);
+                console.log(error);
+                return false;
             }
-
-            return true;
-
-        } catch (error) {
-            console.log(error);
-            return false;
         }
-    }
+    },
 });
 
 export { handler as GET, handler as POST }

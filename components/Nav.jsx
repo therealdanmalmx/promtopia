@@ -6,18 +6,18 @@ import { useState, useEffect } from 'react'
 import { signIn, signOut, useSession, getProviders } from 'next-auth/react'
 
 const Nav = () => {
-    const isUserLoggedIn = true;
-    const [providers, setProvider] = useState(null);
+    const { data: session } = useSession();
+    const [providers, setProviders] = useState(null);
     const [toggleDropdown, setToggleDropdown] = useState(false)
 
     useEffect(() => {
-        const setProviders = async () => {
+        const setUpProviders = async () => {
             const response = await getProviders();
 
-            setProvider(response);
+            setProviders(response);
         }
 
-        setProvider();
+        setUpProviders();
     }, [])
 
   return (
@@ -33,7 +33,7 @@ const Nav = () => {
             <p className="logo_text">Promptopia</p>
         </Link>
         <div className="sm:flex hidden">
-            {isUserLoggedIn ? (
+            {session?.user ? (
                 <div className='flex gap-3 md:gap-5'>
                     <Link
                         href="/create-prompt"
@@ -46,10 +46,11 @@ const Nav = () => {
                         onClick={signOut}
                         className='outline_btn'
 
-                    >Sign Out</button>
+                    >Sign Out
+                    </button>
                     <Link href="/profiles">
                         <Image
-                            src="/assets/images/logo.svg"
+                            src={session?.user?.image}
                             width={37}
                             height={37}
                             className='rounded-full'
@@ -65,8 +66,7 @@ const Nav = () => {
                             key={provider.name}
                             onClick={() => signIn(provider.id)}
                             className='black_btn'
-
-                        >
+                        > Sign in
                         </button>
                     ))}
                 </>
@@ -75,16 +75,16 @@ const Nav = () => {
 
         {/* Mobile navigation */}
         <div className="sm:hidden flex gap-3">
-            {isUserLoggedIn ? (
+            {session?.user ? (
                 <div className='flex'>
                         <Image
-                        src="/assets/images/logo.svg"
-                        width={37}
-                        height={37}
-                        className='rounded-full'
-                        alt='profile'
-                        onClick={() => setToggleDropdown((prev) => !prev)}
-                    />
+                            src={session?.user?.image}
+                            width={37}
+                            height={37}
+                            className='rounded-full'
+                            alt='profile'
+                            onClick={() => setToggleDropdown((prev) => !prev)}
+                        />
                     {toggleDropdown && (
                         <div className='dropdown'>
                             <Link
@@ -122,8 +122,7 @@ const Nav = () => {
                             key={provider.name}
                             onClick={() => signIn(provider.id)}
                             className='black_btn'
-
-                        >
+                        > Sign in
                         </button>
                     ))}
                 </>
