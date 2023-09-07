@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import User from "@models/User";
-import { connectDB } from "@utils/database";
+import { connectDB } from "@utils/database.js";
 
 const handler = NextAuth({
     providers: [
@@ -10,23 +10,12 @@ const handler = NextAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
         })
     ],
+
     callbacks: {
-        async session({ session }) {
-            const sessionUser = await User.findOne({ email: session.user.email });
-            session.user.id = sessionUser._id.toString();
-
-            return session;
-
-        },
         async signIn({ profile }) {
             try {
                 await connectDB();
 
-                // let username = profile.name.replace(/ /g, "").toLowerCase();
-
-                // if (!/^[a-z0-9]{8,50}$/.test(username)) {
-                //     throw new Error('Generated username is invalid');
-                // }
 
                 const userExists = await User.findOne({ email: profile.email });
 
@@ -37,15 +26,21 @@ const handler = NextAuth({
                         image: profile.picture,
                     })
                 }
-
                 return true;
 
             } catch (error) {
-                console.log('profile', profile);
                 console.log(error);
                 return false;
             }
-        }
+        },
+        async session({ session }) {
+            console.log('sessionUser', session);
+            const sessionUser = await User.findOne({ email: session.user.email });
+            session.user.id = sessionUser._id.toString();
+
+
+            return session;
+        },
     },
 });
 
